@@ -12,25 +12,25 @@
 body {
   background: black;
   overflow: hidden;
-  cursor: none;
 }
 
-/* FIX BUTTON */
+/* TOMBOL FIX */
 #startBtn {
   position: relative;
-  z-index: 10;
+  z-index: 1000;
 }
-startBtn.onclick = () => {
-  try { Tone.start(); } catch(e) {}
 
-  start.style.display = "none";
-  game.style.display = "block";
-
-  cursor.style.display = 'block'; // ini penting
-
-  startSequence();
-};
-.hidden { display: none; }
+/* CURSOR FIX */
+#cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* BIAR GA NUTUP KLIK */
+  display: none; /* SEMBUNYI DI AWAL */
+}
 
 /* ENTITY */
 #entityContainer {
@@ -46,7 +46,6 @@ startBtn.onclick = () => {
   background: white;
   border-radius: 50%;
   position: relative;
-  overflow: hidden;
 }
 
 .pupil {
@@ -60,25 +59,11 @@ startBtn.onclick = () => {
   transform: translate(-50%, -50%);
 }
 
-/* CURSOR */
-#cursor {
-  position: fixed;
-  width: 20px;
-  height: 20px;
-  border: 2px solid white;
-  border-radius: 50%;
-  pointer-events: none;
-  display:none;
-  transform: translate(-50%, -50%);
-}
-
 /* TEXT */
 .scary-text {
   position: absolute;
   color: red;
-  font-size: 20px;
   opacity: 0;
-  text-shadow: 0 0 10px red;
 }
 
 /* FLASH */
@@ -89,27 +74,13 @@ startBtn.onclick = () => {
   opacity: 0;
 }
 
-/* FACE HORROR */
+/* FACE */
 #face {
   position: fixed;
   inset: 0;
   background: url('https://i.imgur.com/8QfQ7ZL.png') center/cover no-repeat;
   opacity: 0;
-  z-index: 50;
-  transition: 0.1s;
-}
-
-/* SHAKE */
-@keyframes shake {
-  0% { transform: translate(0); }
-  25% { transform: translate(-5px, 5px); }
-  50% { transform: translate(5px, -5px); }
-  75% { transform: translate(-5px, -5px); }
-  100% { transform: translate(0); }
-}
-
-.shake {
-  animation: shake 0.2s infinite;
+  transition: 0.2s;
 }
 
 /* JUMPSCARE */
@@ -118,11 +89,10 @@ startBtn.onclick = () => {
   inset: 0;
   background: red;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   font-size: 80px;
   opacity: 0;
-  transition: 0.1s;
 }
 
 #jumpscare.active {
@@ -135,13 +105,13 @@ startBtn.onclick = () => {
 
 <!-- START -->
 <div id="start" class="flex items-center justify-center h-screen">
-  <button id="startBtn" class="bg-red-600 px-6 py-3 rounded text-white">
+  <button id="startBtn" class="bg-red-600 text-white px-6 py-3 rounded">
     ENTER
   </button>
 </div>
 
 <!-- GAME -->
-<div id="game" class="hidden">
+<div id="game" style="display:none;">
   <div id="entityContainer">
     <div class="eye">
       <div class="pupil"></div>
@@ -153,10 +123,7 @@ startBtn.onclick = () => {
   <div id="flash"></div>
 </div>
 
-<!-- HORROR FACE -->
 <div id="face"></div>
-
-<!-- JUMPSCARE -->
 <div id="jumpscare">👁️</div>
 
 <script>
@@ -174,17 +141,24 @@ const face = document.getElementById('face');
 let mouseX = 0;
 let mouseY = 0;
 
-// FIX CLICK (HP + PC)
+/* START FIX */
 startBtn.onclick = () => {
   try { Tone.start(); } catch(e) {}
 
   start.style.display = "none";
   game.style.display = "block";
 
+  cursor.style.display = "block";
+
   startSequence();
 };
 
-// Cursor follow
+/* SUPPORT HP */
+startBtn.addEventListener('touchstart', () => {
+  startBtn.click();
+});
+
+/* CURSOR */
 document.addEventListener('mousemove', e => {
   mouseX = e.clientX;
   mouseY = e.clientY;
@@ -193,72 +167,35 @@ document.addEventListener('mousemove', e => {
   cursor.style.top = mouseY + 'px';
 
   updateEye();
-  proximityEffect();
 });
 
-// Eye follow
+/* EYE FOLLOW */
 function updateEye() {
   const rect = entity.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
 
   const angle = Math.atan2(mouseY - cy, mouseX - cx);
-  const dist = Math.min(15, Math.hypot(mouseX - cx, mouseY - cy) / 15);
+  const dist = 10;
 
   const x = Math.cos(angle) * dist;
   const y = Math.sin(angle) * dist;
 
-  pupil.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+  pupil.style.transform =
+    `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 }
 
-// Proximity effect
-function proximityEffect() {
-  const rect = entity.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-
-  const dist = Math.hypot(mouseX - cx, mouseY - cy);
-
-  if (dist < 150) {
-    entity.style.transform = `translate(-50%, -50%) scale(1.2)`;
-    cursor.style.borderColor = 'red';
-  } else {
-    entity.style.transform = `translate(-50%, -50%) scale(1)`;
-    cursor.style.borderColor = 'white';
-  }
-}
-
-// Horror sequence
+/* SEQUENCE */
 function startSequence() {
-
   setTimeout(() => whisper("Aku melihatmu..."), 2000);
-
-  setTimeout(() => {
-    flicker();
-    entity.style.transform += " scale(1.1)";
-  }, 4000);
-
+  setTimeout(() => flicker(), 4000);
   setTimeout(() => whisper("Jangan mendekat..."), 6000);
-
-  setTimeout(() => {
-    glitch();
-    document.body.classList.add('shake');
-  }, 8000);
-
+  setTimeout(() => glitch(), 8000);
   setTimeout(() => whisper("Kau tidak bisa lari..."), 10000);
-
-  setTimeout(() => {
-    face.style.opacity = 0.3;
-  }, 11000);
-
-  setTimeout(() => {
-    face.style.opacity = 1;
-  }, 12000);
-
   setTimeout(() => finalScare(), 13000);
 }
 
-// Whisper
+/* TEXT */
 function whisper(text) {
   const el = document.createElement('div');
   el.className = 'scary-text';
@@ -272,43 +209,31 @@ function whisper(text) {
   requestAnimationFrame(() => el.style.opacity = 1);
 
   setTimeout(() => {
-    el.style.opacity = 0;
-    setTimeout(() => el.remove(), 1000);
+    el.remove();
   }, 2000);
 
   new Tone.NoiseSynth().toDestination().triggerAttackRelease("16n");
 }
 
-// Flicker
+/* EFFECT */
 function flicker() {
   flash.style.opacity = 1;
   setTimeout(() => flash.style.opacity = 0, 100);
 }
 
-// Glitch
 function glitch() {
   document.body.style.background = "#100000";
 }
 
-// Final scare
+/* FINAL */
 function finalScare() {
   jumpscare.classList.add('active');
   face.style.opacity = 1;
 
-  document.body.classList.add('shake');
-
-  const scream = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.5, sustain: 0 }
-  }).toDestination();
-
-  scream.volume.value = 15;
-  scream.triggerAttackRelease("4n");
+  const scream = new Tone.NoiseSynth().toDestination();
+  scream.triggerAttackRelease("8n");
 
   cursor.style.display = 'none';
-
-  flash.style.opacity = 1;
-  setTimeout(() => flash.style.opacity = 0, 100);
 }
 </script>
 
