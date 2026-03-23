@@ -15,6 +15,12 @@ body {
   cursor: none;
 }
 
+/* FIX BUTTON */
+#startBtn {
+  position: relative;
+  z-index: 10;
+}
+
 .hidden { display: none; }
 
 /* ENTITY */
@@ -73,6 +79,29 @@ body {
   opacity: 0;
 }
 
+/* FACE HORROR */
+#face {
+  position: fixed;
+  inset: 0;
+  background: url('https://i.imgur.com/8QfQ7ZL.png') center/cover no-repeat;
+  opacity: 0;
+  z-index: 50;
+  transition: 0.1s;
+}
+
+/* SHAKE */
+@keyframes shake {
+  0% { transform: translate(0); }
+  25% { transform: translate(-5px, 5px); }
+  50% { transform: translate(5px, -5px); }
+  75% { transform: translate(-5px, -5px); }
+  100% { transform: translate(0); }
+}
+
+.shake {
+  animation: shake 0.2s infinite;
+}
+
 /* JUMPSCARE */
 #jumpscare {
   position: fixed;
@@ -96,7 +125,7 @@ body {
 
 <!-- START -->
 <div id="start" class="flex items-center justify-center h-screen">
-  <button id="startBtn" class="bg-red-600 px-6 py-3 rounded">
+  <button id="startBtn" class="bg-red-600 px-6 py-3 rounded text-white">
     ENTER
   </button>
 </div>
@@ -114,6 +143,9 @@ body {
   <div id="flash"></div>
 </div>
 
+<!-- HORROR FACE -->
+<div id="face"></div>
+
 <!-- JUMPSCARE -->
 <div id="jumpscare">👁️</div>
 
@@ -127,9 +159,20 @@ const textContainer = document.getElementById('textContainer');
 const flash = document.getElementById('flash');
 const jumpscare = document.getElementById('jumpscare');
 const entity = document.getElementById('entityContainer');
+const face = document.getElementById('face');
 
 let mouseX = 0;
 let mouseY = 0;
+
+// FIX CLICK (HP + PC)
+startBtn.onclick = () => {
+  try { Tone.start(); } catch(e) {}
+
+  start.style.display = "none";
+  game.style.display = "block";
+
+  startSequence();
+};
 
 // Cursor follow
 document.addEventListener('mousemove', e => {
@@ -175,26 +218,37 @@ function proximityEffect() {
   }
 }
 
-// Start
-startBtn.addEventListener('click', async () => {
-  await Tone.start();
-  start.classList.add('hidden');
-  game.classList.remove('hidden');
-  startSequence();
-});
-
 // Horror sequence
 function startSequence() {
 
   setTimeout(() => whisper("Aku melihatmu..."), 2000);
-  setTimeout(() => flicker(), 4000);
+
+  setTimeout(() => {
+    flicker();
+    entity.style.transform += " scale(1.1)";
+  }, 4000);
+
   setTimeout(() => whisper("Jangan mendekat..."), 6000);
-  setTimeout(() => glitch(), 8000);
+
+  setTimeout(() => {
+    glitch();
+    document.body.classList.add('shake');
+  }, 8000);
+
   setTimeout(() => whisper("Kau tidak bisa lari..."), 10000);
+
+  setTimeout(() => {
+    face.style.opacity = 0.3;
+  }, 11000);
+
+  setTimeout(() => {
+    face.style.opacity = 1;
+  }, 12000);
+
   setTimeout(() => finalScare(), 13000);
 }
 
-// Whisper text
+// Whisper
 function whisper(text) {
   const el = document.createElement('div');
   el.className = 'scary-text';
@@ -224,22 +278,27 @@ function flicker() {
 // Glitch
 function glitch() {
   document.body.style.background = "#100000";
-  entity.style.transform += " rotate(2deg)";
 }
 
 // Final scare
 function finalScare() {
   jumpscare.classList.add('active');
+  face.style.opacity = 1;
+
+  document.body.classList.add('shake');
 
   const scream = new Tone.NoiseSynth({
     noise: { type: "white" },
-    envelope: { attack: 0.01, decay: 0.2, sustain: 0 }
+    envelope: { attack: 0.001, decay: 0.5, sustain: 0 }
   }).toDestination();
 
-  scream.volume.value = 10;
-  scream.triggerAttackRelease("8n");
+  scream.volume.value = 15;
+  scream.triggerAttackRelease("4n");
 
   cursor.style.display = 'none';
+
+  flash.style.opacity = 1;
+  setTimeout(() => flash.style.opacity = 0, 100);
 }
 </script>
 
