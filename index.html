@@ -14,13 +14,13 @@ body {
   overflow: hidden;
 }
 
-/* BUTTON */
+/* BUTTON FIX */
 #startBtn {
-  z-index: 1000;
   position: relative;
+  z-index: 1000;
 }
 
-/* CURSOR */
+/* CURSOR FIX */
 #cursor {
   position: fixed;
   width: 20px;
@@ -32,7 +32,7 @@ body {
   display: none;
 }
 
-/* EYE */
+/* ENTITY */
 #entity {
   position: absolute;
   top: 50%;
@@ -83,13 +83,13 @@ body {
   background: url('https://i.imgur.com/8QfQ7ZL.png') center/cover no-repeat;
   opacity: 0;
   z-index: 50;
+  transition: 0.2s;
 }
 
 /* GLITCH */
 .glitch {
   animation: glitch 0.1s infinite;
 }
-
 @keyframes glitch {
   0% { transform: translate(0); }
   25% { transform: translate(-5px,5px); }
@@ -155,8 +155,10 @@ const entity = document.getElementById('entity');
 
 let mx=0,my=0;
 
-/* START */
-startBtn.onclick = () => {
+/* START FIX TOTAL */
+function startGameNow() {
+  console.log("MASUK GAME"); // debug
+
   try { Tone.start(); } catch(e){}
 
   start.style.display="none";
@@ -164,7 +166,10 @@ startBtn.onclick = () => {
   cursor.style.display="block";
 
   sequence();
-};
+}
+
+startBtn.addEventListener("click", startGameNow);
+startBtn.addEventListener("touchstart", startGameNow);
 
 /* CURSOR */
 document.addEventListener('mousemove', e=>{
@@ -198,7 +203,6 @@ function whisper(t){
   text.appendChild(el);
 
   requestAnimationFrame(()=>el.style.opacity=1);
-
   setTimeout(()=>el.remove(),2000);
 
   new Tone.NoiseSynth().toDestination().triggerAttackRelease("16n");
