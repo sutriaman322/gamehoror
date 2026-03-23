@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horror Entity</title>
+<title>DON'T LOOK</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
@@ -14,13 +14,13 @@ body {
   overflow: hidden;
 }
 
-/* TOMBOL FIX */
+/* BUTTON */
 #startBtn {
-  position: relative;
   z-index: 1000;
+  position: relative;
 }
 
-/* CURSOR FIX */
+/* CURSOR */
 #cursor {
   position: fixed;
   width: 20px;
@@ -28,12 +28,12 @@ body {
   border: 2px solid white;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  pointer-events: none; /* BIAR GA NUTUP KLIK */
-  display: none; /* SEMBUNYI DI AWAL */
+  pointer-events: none;
+  display: none;
 }
 
-/* ENTITY */
-#entityContainer {
+/* EYE */
+#entity {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -45,6 +45,7 @@ body {
   height: 120px;
   background: white;
   border-radius: 50%;
+  overflow: hidden;
   position: relative;
 }
 
@@ -60,10 +61,11 @@ body {
 }
 
 /* TEXT */
-.scary-text {
+.scary {
   position: absolute;
   color: red;
   opacity: 0;
+  text-shadow: 0 0 10px red;
 }
 
 /* FLASH */
@@ -80,7 +82,20 @@ body {
   inset: 0;
   background: url('https://i.imgur.com/8QfQ7ZL.png') center/cover no-repeat;
   opacity: 0;
-  transition: 0.2s;
+  z-index: 50;
+}
+
+/* GLITCH */
+.glitch {
+  animation: glitch 0.1s infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  25% { transform: translate(-5px,5px); }
+  50% { transform: translate(5px,-5px); }
+  75% { transform: translate(-5px,-5px); }
+  100% { transform: translate(0); }
 }
 
 /* JUMPSCARE */
@@ -91,7 +106,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 80px;
+  font-size: 100px;
   opacity: 0;
 }
 
@@ -105,22 +120,22 @@ body {
 
 <!-- START -->
 <div id="start" class="flex items-center justify-center h-screen">
-  <button id="startBtn" class="bg-red-600 text-white px-6 py-3 rounded">
+  <button id="startBtn" class="bg-red-700 px-6 py-3 text-white rounded">
     ENTER
   </button>
 </div>
 
 <!-- GAME -->
 <div id="game" style="display:none;">
-  <div id="entityContainer">
+  <div id="entity">
     <div class="eye">
       <div class="pupil"></div>
     </div>
   </div>
 
-  <div id="textContainer"></div>
   <div id="cursor"></div>
   <div id="flash"></div>
+  <div id="text"></div>
 </div>
 
 <div id="face"></div>
@@ -132,108 +147,109 @@ const start = document.getElementById('start');
 const game = document.getElementById('game');
 const pupil = document.querySelector('.pupil');
 const cursor = document.getElementById('cursor');
-const textContainer = document.getElementById('textContainer');
+const text = document.getElementById('text');
 const flash = document.getElementById('flash');
-const jumpscare = document.getElementById('jumpscare');
-const entity = document.getElementById('entityContainer');
 const face = document.getElementById('face');
+const jumpscare = document.getElementById('jumpscare');
+const entity = document.getElementById('entity');
 
-let mouseX = 0;
-let mouseY = 0;
+let mx=0,my=0;
 
-/* START FIX */
+/* START */
 startBtn.onclick = () => {
-  try { Tone.start(); } catch(e) {}
+  try { Tone.start(); } catch(e){}
 
-  start.style.display = "none";
-  game.style.display = "block";
+  start.style.display="none";
+  game.style.display="block";
+  cursor.style.display="block";
 
-  cursor.style.display = "block";
-
-  startSequence();
+  sequence();
 };
 
-/* SUPPORT HP */
-startBtn.addEventListener('touchstart', () => {
-  startBtn.click();
-});
-
 /* CURSOR */
-document.addEventListener('mousemove', e => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-
-  cursor.style.left = mouseX + 'px';
-  cursor.style.top = mouseY + 'px';
-
-  updateEye();
+document.addEventListener('mousemove', e=>{
+  mx=e.clientX; my=e.clientY;
+  cursor.style.left=mx+"px";
+  cursor.style.top=my+"px";
+  eye();
 });
 
 /* EYE FOLLOW */
-function updateEye() {
-  const rect = entity.getBoundingClientRect();
-  const cx = rect.left + rect.width/2;
-  const cy = rect.top + rect.height/2;
+function eye(){
+  const r=entity.getBoundingClientRect();
+  const cx=r.left+r.width/2;
+  const cy=r.top+r.height/2;
 
-  const angle = Math.atan2(mouseY - cy, mouseX - cx);
-  const dist = 10;
+  const ang=Math.atan2(my-cy,mx-cx);
+  const x=Math.cos(ang)*12;
+  const y=Math.sin(ang)*12;
 
-  const x = Math.cos(angle) * dist;
-  const y = Math.sin(angle) * dist;
-
-  pupil.style.transform =
-    `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-}
-
-/* SEQUENCE */
-function startSequence() {
-  setTimeout(() => whisper("Aku melihatmu..."), 2000);
-  setTimeout(() => flicker(), 4000);
-  setTimeout(() => whisper("Jangan mendekat..."), 6000);
-  setTimeout(() => glitch(), 8000);
-  setTimeout(() => whisper("Kau tidak bisa lari..."), 10000);
-  setTimeout(() => finalScare(), 13000);
+  pupil.style.transform=
+    `translate(calc(-50%+${x}px),calc(-50%+${y}px))`;
 }
 
 /* TEXT */
-function whisper(text) {
-  const el = document.createElement('div');
-  el.className = 'scary-text';
-  el.innerText = text;
+function whisper(t){
+  const el=document.createElement("div");
+  el.className="scary";
+  el.innerText=t;
+  el.style.top=Math.random()*80+"%";
+  el.style.left=Math.random()*80+"%";
+  text.appendChild(el);
 
-  el.style.top = Math.random()*80 + '%';
-  el.style.left = Math.random()*80 + '%';
+  requestAnimationFrame(()=>el.style.opacity=1);
 
-  textContainer.appendChild(el);
-
-  requestAnimationFrame(() => el.style.opacity = 1);
-
-  setTimeout(() => {
-    el.remove();
-  }, 2000);
+  setTimeout(()=>el.remove(),2000);
 
   new Tone.NoiseSynth().toDestination().triggerAttackRelease("16n");
 }
 
 /* EFFECT */
-function flicker() {
-  flash.style.opacity = 1;
-  setTimeout(() => flash.style.opacity = 0, 100);
+function flick(){
+  flash.style.opacity=1;
+  setTimeout(()=>flash.style.opacity=0,100);
 }
 
-function glitch() {
-  document.body.style.background = "#100000";
+/* SEQUENCE */
+function sequence(){
+  setTimeout(()=>whisper("aku melihatmu"),2000);
+
+  setTimeout(()=>{
+    flick();
+    document.body.classList.add("glitch");
+  },4000);
+
+  setTimeout(()=>whisper("jangan melihat"),6000);
+
+  setTimeout(()=>{
+    face.style.opacity=0.3;
+  },8000);
+
+  setTimeout(()=>{
+    face.style.opacity=1;
+  },9000);
+
+  setTimeout(()=>whisper("terlambat"),10000);
+
+  setTimeout(()=>final(),12000);
 }
 
 /* FINAL */
-function finalScare() {
-  jumpscare.classList.add('active');
-  face.style.opacity = 1;
+function final(){
+  document.body.classList.add("glitch");
 
-  const scream = new Tone.NoiseSynth().toDestination();
-  scream.triggerAttackRelease("8n");
+  jumpscare.classList.add("active");
+  face.style.opacity=1;
 
-  cursor.style.display = 'none';
+  const scream=new Tone.NoiseSynth({
+    envelope:{attack:0.001,decay:0.5}
+  }).toDestination();
+
+  scream.volume.value=15;
+  scream.triggerAttackRelease("4n");
+
+  flash.style.opacity=1;
+  cursor.style.display="none";
 }
 </script>
 
