@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horror Entity</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+
+<style>
+body {
+  background: black;
+  overflow: hidden;
+  cursor: none;
+}
+
+.hidden { display: none; }
+
+/* ENTITY */
+#entityContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.eye {
+  width: 120px;
+  height: 120px;
+  background: white;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.pupil {
+  width: 40px;
+  height: 40px;
+  background: black;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* CURSOR */
+#cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* TEXT */
+.scary-text {
+  position: absolute;
+  color: red;
+  font-size: 20px;
+  opacity: 0;
+  text-shadow: 0 0 10px red;
+}
+
+/* FLASH */
+#flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0;
+}
+
+/* JUMPSCARE */
+#jumpscare {
+  position: fixed;
+  inset: 0;
+  background: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  opacity: 0;
+  transition: 0.1s;
+}
+
+#jumpscare.active {
+  opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<!-- START -->
+<div id="start" class="flex items-center justify-center h-screen">
+  <button id="startBtn" class="bg-red-600 px-6 py-3 rounded">
+    ENTER
+  </button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hidden">
+  <div id="entityContainer">
+    <div class="eye">
+      <div class="pupil"></div>
+    </div>
+  </div>
+
+  <div id="textContainer"></div>
+  <div id="cursor"></div>
+  <div id="flash"></div>
+</div>
+
+<!-- JUMPSCARE -->
+<div id="jumpscare">👁️</div>
+
+<script>
+const startBtn = document.getElementById('startBtn');
+const start = document.getElementById('start');
+const game = document.getElementById('game');
+const pupil = document.querySelector('.pupil');
+const cursor = document.getElementById('cursor');
+const textContainer = document.getElementById('textContainer');
+const flash = document.getElementById('flash');
+const jumpscare = document.getElementById('jumpscare');
+const entity = document.getElementById('entityContainer');
+
+let mouseX = 0;
+let mouseY = 0;
+
+// Cursor follow
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+
+  updateEye();
+  proximityEffect();
+});
+
+// Eye follow
+function updateEye() {
+  const rect = entity.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  const angle = Math.atan2(mouseY - cy, mouseX - cx);
+  const dist = Math.min(15, Math.hypot(mouseX - cx, mouseY - cy) / 15);
+
+  const x = Math.cos(angle) * dist;
+  const y = Math.sin(angle) * dist;
+
+  pupil.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+}
+
+// Proximity effect
+function proximityEffect() {
+  const rect = entity.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  const dist = Math.hypot(mouseX - cx, mouseY - cy);
+
+  if (dist < 150) {
+    entity.style.transform = `translate(-50%, -50%) scale(1.2)`;
+    cursor.style.borderColor = 'red';
+  } else {
+    entity.style.transform = `translate(-50%, -50%) scale(1)`;
+    cursor.style.borderColor = 'white';
+  }
+}
+
+// Start
+startBtn.addEventListener('click', async () => {
+  await Tone.start();
+  start.classList.add('hidden');
+  game.classList.remove('hidden');
+  startSequence();
+});
+
+// Horror sequence
+function startSequence() {
+
+  setTimeout(() => whisper("Aku melihatmu..."), 2000);
+  setTimeout(() => flicker(), 4000);
+  setTimeout(() => whisper("Jangan mendekat..."), 6000);
+  setTimeout(() => glitch(), 8000);
+  setTimeout(() => whisper("Kau tidak bisa lari..."), 10000);
+  setTimeout(() => finalScare(), 13000);
+}
+
+// Whisper text
+function whisper(text) {
+  const el = document.createElement('div');
+  el.className = 'scary-text';
+  el.innerText = text;
+
+  el.style.top = Math.random()*80 + '%';
+  el.style.left = Math.random()*80 + '%';
+
+  textContainer.appendChild(el);
+
+  requestAnimationFrame(() => el.style.opacity = 1);
+
+  setTimeout(() => {
+    el.style.opacity = 0;
+    setTimeout(() => el.remove(), 1000);
+  }, 2000);
+
+  new Tone.NoiseSynth().toDestination().triggerAttackRelease("16n");
+}
+
+// Flicker
+function flicker() {
+  flash.style.opacity = 1;
+  setTimeout(() => flash.style.opacity = 0, 100);
+}
+
+// Glitch
+function glitch() {
+  document.body.style.background = "#100000";
+  entity.style.transform += " rotate(2deg)";
+}
+
+// Final scare
+function finalScare() {
+  jumpscare.classList.add('active');
+
+  const scream = new Tone.NoiseSynth({
+    noise: { type: "white" },
+    envelope: { attack: 0.01, decay: 0.2, sustain: 0 }
+  }).toDestination();
+
+  scream.volume.value = 10;
+  scream.triggerAttackRelease("8n");
+
+  cursor.style.display = 'none';
+}
+</script>
+
+</body>
+</html>
